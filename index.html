@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Church Security Schedule</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @media print {
+            body { background: white !important; }
+            .print-hidden { display: none !important; }
+            .print-shadow-none { box-shadow: none !important; }
+            .print-break-inside-avoid { break-inside: avoid; }
+            .print-border-gray-400 { border-color: #9ca3af !important; }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useRef } = React;
+
+        // Lucide React Icons as SVG components
+        const Calendar = () => (
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="16" y1="2" x2="16" y2="6"></line>
+                <line x1="8" y1="2" x2="8" y2="6"></line>
+                <line x1="3" y1="10" x2="21" y2="10"></line>
+            </svg>
+        );
+
+        const Plus = () => (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+        );
+
+        const Trash2 = () => (
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                <line x1="10" y1="11" x2="10" y2="17"></line>
+                <line x1="14" y1="11" x2="14" y2="17"></line>
+            </svg>
+        );
+
+        const Printer = () => (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="6 9 6 2 18 2 18 9"></polyline>
+                <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+                <rect x="6" y="14" width="12" height="8"></rect>
+            </svg>
+        );
+
+        const Download = () => (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+        );
+
+        const Upload = () => (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="17 8 12 3 7 8"></polyline>
+                <line x1="12" y1="3" x2="12" y2="15"></line>
+            </svg>
+        );
+
+        function ChurchSecuritySchedule() {
+            const [schedules, setSchedules] = useState([
+                { id: 1, entrance: 'North', date: '', time: '', name: '' },
+                { id: 2, entrance: 'South', date: '', time: '', name: '' }
+            ]);
+            const fileInputRef = useRef(null);
+
+            const addSchedule = (entrance) => {
+                const newSchedule = {
+                    id: Date.now(),
+                    entrance: entrance,
+                    date: '',
+                    time: '',
+                    name: ''
+                };
+                setSchedules([...schedules, newSchedule]);
+            };
+
+            const updateSchedule = (id, field, value) => {
+                setSchedules(schedules.map(schedule => 
+                    schedule.id === id ? { ...schedule, [field]: value } : schedule
+                ));
+            };
+
+            const deleteSchedule = (id) => {
+                setSchedules(schedules.filter(schedule => schedule.id !== id));
+            };
+
+            const handlePrint = () => {
+                window.print();
+            };
+
+            const exportSchedule = () => {
+                const dataStr = JSON.stringify(schedules, null, 2);
+                const dataBlob = new Blob([dataStr], { type: 'application/json' });
+                const url = URL.createObjectURL(dataBlob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `church-security-schedule-${new Date().toISOString().split('T')[0]}.json`;
+                link.click();
+                URL.revokeObjectURL(url);
+            };
+
+            const importSchedule = (event) => {
+                const file = event.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        try {
+                            const importedData = JSON.parse(e.target.result);
+                            setSchedules(importedData);
+                        } catch (error) {
+                            alert('Error loading schedule file. Please make sure it\'s a valid schedule file.');
+                        }
+                    };
+                    reader.readAsText(file);
+                }
+                event.target.value = '';
+            };
+
+            const wednesdaySchedules = schedules.filter(s => s.entrance === 'North');
+            const sundaySchedules = schedules.filter(s => s.entrance === 'South');
+
+            return (
+                <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 p-4 md:p-8">
+                    <div className="max-w-6xl mx-auto">
+                        <div className="bg-white rounded-lg shadow-lg p-6 mb-6 print-shadow-none">
+                            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                                <div className="flex items-center gap-3">
+                                    <Calendar />
+                                    <div>
+                                        <h1 className="text-3xl font-bold text-gray-800">Church Security Schedule</h1>
+                                        <p className="text-gray-600 mt-1">Manage your security team assignments</p>
+                                    </div>
+                                </div>
+                                <div className="flex gap-2 print-hidden">
+                                    <button
+                                        onClick={() => fileInputRef.current.click()}
+                                        className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
+                                    >
+                                        <Upload />
+                                        Load
+                                    </button>
+                                    <button
+                                        onClick={exportSchedule}
+                                        className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                                    >
+                                        <Download />
+                                        Save
+                                    </button>
+                                    <button
+                                        onClick={handlePrint}
+                                        className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors"
+                                    >
+                                        <Printer />
+                                        Print
+                                    </button>
+                                </div>
+                            </div>
+                            <input
+                                ref={fileInputRef}
+                                type="file"
+                                accept=".json"
+                                onChange={importSchedule}
+                                className="hidden"
+                            />
+                        </div>
+
+                        <div className="grid md:grid-cols-2 gap-6">
+                            <div className="bg-white rounded-lg shadow-lg p-6 print-shadow-none print-break-inside-avoid">
+                                <div className="flex items-center justify-between mb-4">
+                                    <h2 className="text-2xl font-bold text-gray-800">Sunday Services - North Entrance</h2>
+                                    <button
+                                        onClick={() => addSchedule('North')}
+                                        className="flex items-center gap-2 bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm print-hidden"
+                                    >
+                                        <Plus />
+                                        Add
+                                    </button>
+                                </div>
+
+                                <div className="space-y-4">
+                                    {wednesdaySchedules.map(schedule => (
+                                        <div key={schedule.id} className="border border-gray-200 rounded-lg p-4 print-border-gray-400">
+                                            <div className="space-y-3">
+                                                <div className="grid grid-cols-2 gap-3">
+                                                    <div>
+                                                        <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                                                        <input
+                                                            type="date"
+                                                            value={schedule.date}
+                                                            onChange={(e) => updateSchedule(schedule.id, 'date', e.target.value)}
+                                                            className="w-full border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label className="block text-sm font-medium text-gray-700 mb-1">Time</label>
+                                                        <input
+                                                            type="time"
+                                                            value={schedule.time}
+                                                            onChange={(e) => updateSchedule(schedule.id, 'time', e.target.value)}
+                                                            className="w-full border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                        />
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-1">Team Member</label>
+                                                    <input
+                                                        type="text"
+                                                        value={schedule.name}
+                                                        onChange={(e) => updateSchedule(schedule.id, 'name', e.target.value)}
+                                                        placeholder="Enter name"
+                                                        className="w-full border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                    />
+                                                </div>
+                                                <button
+                                                    onClick={() => deleteSchedule(schedule.id)}
+                                                    className="flex items-center gap-2 text-red-600 hover:text-red-700 text-sm print-hidden"
+                                                >
+                                                    <Trash2 />
+                                                    Remove
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                    {wednesdaySchedules.length === 0 && (
+                                        <p className="text-gray-500 text-center py-4">No North Entrance assignments scheduled</p>
+                                    )}
+                                </div>
+                            </div>
+
+                            <div className="bg-white rounded-lg shadow-lg p-6 print-shadow-none print-break-inside-avoid">
+                                <div className="flex items-center justify-between mb-4">
+                                    <h2 className="text-2xl font-bold text-gray-800">Sunday Services - South Entrance</h2>
+                                    <button
+                                        onClick={() => addSchedule('South')}
+                                        className="flex items-center gap-2 bg-indigo-600 text-white px-3 py-2 rounded-lg hover:bg-indigo-700 transition-colors text-sm print-hidden"
+                                    >
+                                        <Plus />
+                                        Add
+                                    </button>
+                                </div>
+
+                                <div className="space-y-4">
+                                    {sundaySchedules.map(schedule => (
+                                        <div key={schedule.id} className="border border-gray-200 rounded-lg p-4 print-border-gray-400">
+                                            <div className="space-y-3">
+                                                <div className="grid grid-cols-2 gap-3">
+                                                    <div>
+                                                        <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                                                        <input
+                                                            type="date"
+                                                            value={schedule.date}
+                                                            onChange={(e) => updateSchedule(schedule.id, 'date', e.target.value)}
+                                                            className="w-full border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label className="block text-sm font-medium text-gray-700 mb-1">Time</label>
+                                                        <input
+                                                            type="time"
+                                                            value={schedule.time}
+                                                            onChange={(e) => updateSchedule(schedule.id, 'time', e.target.value)}
+                                                            className="w-full border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                                        />
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-1">Team Member</label>
+                                                    <input
+                                                        type="text"
+                                                        value={schedule.name}
+                                                        onChange={(e) => updateSchedule(schedule.id, 'name', e.target.value)}
+                                                        placeholder="Enter name"
+                                                        className="w-full border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                                    />
+                                                </div>
+                                                <button
+                                                    onClick={() => deleteSchedule(schedule.id)}
+                                                    className="flex items-center gap-2 text-red-600 hover:text-red-700 text-sm print-hidden"
+                                                >
+                                                    <Trash2 />
+                                                    Remove
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                    {sundaySchedules.length === 0 && (
+                                        <p className="text-gray-500 text-center py-4">No South Entrance assignments scheduled</p>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        ReactDOM.render(<ChurchSecuritySchedule />, document.getElementById('root'));
+    </script>
+</body>
+</html>
